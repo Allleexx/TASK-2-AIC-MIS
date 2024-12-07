@@ -1,0 +1,40 @@
+Data Overview,Missing Values,Linear Regression RMSE,Random Forest RMSE,Selected Model
+"                    count          mean           std  ...        50%         75%        max
+Unnamed: 0         8000.0  5.011507e+03  2.887649e+03  ...     5013.5     7504.25     9999.0
+squareMeters       8000.0  4.957673e+04  2.855794e+04  ...    49819.0    73984.25    99952.0
+numberOfRooms      8000.0  5.058062e+01  2.881430e+01  ...       51.0       75.00      100.0
+hasYard            8000.0  5.072500e-01  4.999787e-01  ...        1.0        1.00        1.0
+hasPool            8000.0  4.967500e-01  5.000207e-01  ...        0.0        1.00        1.0
+floors             8000.0  5.017000e+01  2.893859e+01  ...       50.0       76.00      100.0
+cityCode           8000.0  5.033893e+04  2.890756e+04  ...    50693.0    75592.50    99953.0
+cityPartRange      8000.0  5.520750e+00  2.876518e+00  ...        6.0        8.00       10.0
+numPrevOwners      8000.0  5.516000e+00  2.861209e+00  ...        5.0        8.00       10.0
+made               8000.0  2.005556e+03  9.317292e+00  ...     2006.0     2014.00     2021.0
+isNewBuilt         8000.0  4.973750e-01  5.000244e-01  ...        0.0        1.00        1.0
+hasStormProtector  8000.0  4.992500e-01  5.000307e-01  ...        0.0        1.00        1.0
+basement           8000.0  5.042219e+03  2.878467e+03  ...     5140.5     7523.25    10000.0
+attic              8000.0  5.022901e+03  2.899772e+03  ...     5056.0     7534.25    10000.0
+garage             8000.0  5.505595e+02  2.623381e+02  ...      549.0      777.00     1000.0
+hasStorageRoom     8000.0  4.998750e-01  5.000312e-01  ...        0.0        1.00        1.0
+hasGuestRoom       8000.0  4.972125e+00  3.163281e+00  ...        5.0        8.00       10.0
+price              8000.0  4.964092e+06  2.855775e+06  ...  4987189.3  7405851.85  9998411.0
+
+[18 rows x 8 columns]","Unnamed: 0           0
+squareMeters         0
+numberOfRooms        0
+hasYard              0
+hasPool              0
+floors               0
+cityCode             0
+cityPartRange        0
+numPrevOwners        0
+made                 0
+isNewBuilt           0
+hasStormProtector    0
+basement             0
+attic                0
+garage               0
+hasStorageRoom       0
+hasGuestRoom         0
+price                0
+dtype: int64",1860.609617639382,3971.1265451828795,Linear Regression
