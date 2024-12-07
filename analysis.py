@@ -8,13 +8,9 @@ from sklearn.metrics import mean_squared_error # To evaluate model performance (
 from sklearn.preprocessing import StandardScaler, OneHotEncoder # For scaling numeric data and encoding categorical data
 from sklearn.compose import ColumnTransformer # To preprocess different feature types in a single pipeline
 from sklearn.pipeline import Pipeline # To streamline preprocessing and modeling
+from sklearn.ensemble import GradientBoostingRegressor
+import matplotlib.pyplot as plt
 
-import matplotlib.pyplot as pyplot
-plt.scatter(y_val, y_val_pred, alpha=0.5)
-plt.xlabel("Actual Prices")
-plt.ylabel("Predicted Prices")
-plt.title("Validation Set: Actual vs Predicted Prices")
-plt.show()
 
 
 # Load the training and test datasets
@@ -90,6 +86,14 @@ y_val_pred = lr_pipeline.predict(X_val)
 lr_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred))
 
 
+# Visualize the Linear Regression results 
+plt.scatter(y_val, y_val_pred, alpha=0.5)
+plt.xlabel("Actual Prices")
+plt.ylabel("Predicted Prices")
+plt.title("Validation Set: Actual vs Predicted Prices (Linear Regression)")
+plt.show()
+
+
 # Step 5: Model Training (Random Forest Regressor for improvement)
 
 rf_pipeline = Pipeline(steps=[('preprocessor', preprocessor), # Apply preprocessing
@@ -106,11 +110,48 @@ y_val_pred_rf = rf_pipeline.predict(X_val)
 rf_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred_rf))
 
 
-# Step 6: Apply best model to test data
+
+
+# Step 6: Model Training (Gradient Boosting Regressor)
+# Gradient Boosting Regressor
+# Train a Gradient Boosting Regressor to capture non-linear relationships
+gb_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),  # Apply preprocessing
+    ('regressor', GradientBoostingRegressor(random_state=42))  # Gradient Boosting model
+])
+
+# Train the model
+gb_pipeline.fit(X_train, y_train)
+
+# Evaluate the model
+y_val_pred_gb = gb_pipeline.predict(X_val)
+gb_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred_gb))
+
+print(f"Gradient Boosting RMSE: {gb_rmse}")
+
+
+
+
+
+# Step 7: Apply best model to test data
 # Select the best-performing model based on RMSE
 # Use Random Forest if it performs better; otherwise, use Linear Regression
-final_model = rf_pipeline if rf_rmse < lr_rmse else lr_pipeline
-test_predictions = final_model.predict(test_data)
+if rf_rmse < lr_rmse and rf_rmse < gb_rmse:
+    final_model = rf_pipeline
+elif gb_rmse < lr_rmse:
+    final_model = gb_pipeline
+else:
+    final_model = lr_pipeline
+
+# Debugging Test Predictions
+try:
+    test_predictions = final_model.predict(test_data)
+    print("Test predictions generated successfully.")
+except Exception as e:
+    print(f"Error during test predictions: {e}")
+    exit()
+
+
 
 # Summarize results
 summary = {
@@ -118,12 +159,27 @@ summary = {
     "Missing Values": missing_values,
     "Linear Regression RMSE": lr_rmse,
     "Random Forest RMSE": rf_rmse,
-    "Selected Model": "Random Forest" if rf_rmse < lr_rmse else "Linear Regression"
+    "Gradient Boosting RMSE": gb_rmse,
+    "Selected Model": "Gradient Boosting" if gb_rmse < lr_rmse and gb_rmse < rf_rmse else
+                     "Random Forest" if rf_rmse < lr_rmse else
+                     "Linear Regression"
 }
 
 #import ace_tools as tools; tools.display_dataframe_to_user(name="Data Summary and Model Results", dataframe=pd.DataFrame([summary]))
 print(pd.DataFrame([summary]))
 
+
+
 # Save the summary of results to a CSV file for documentation
-pd.DataFrame([summary]).to_csv("output_summary.csv", index=False)
-print("Summary saved to output_summary.csv")
+#pd.DataFrame([summary]).to_csv("output_summary.csv", index=False)
+#print("Summary saved to output_summary.csv")
+
+
+# Save test predictions to CSV for review
+pd.DataFrame({"Test Predictions": test_predictions}).to_csv("test_predictions.csv", index=False)
+print("Test predictions saved to test_predictions.csv")
+
+print(f"Linear Regression RMSE: {lr_rmse}")
+print(f"Random Forest RMSE: {rf_rmse}")
+print(f"Gradient Boosting RMSE: {gb_rmse}")
+print(f"Selected Model: {summary['Selected Model']}")
