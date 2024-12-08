@@ -22,7 +22,7 @@ test_path = "test.csv"
 try:
     train_data = pd.read_csv(train_path) # Training data
     test_data = pd.read_csv(test_path) # Test data
-except: FileNotFoundError as e:
+except FileNotFoundError as e:
     print(f"Error: {e}")
     exit()
 
@@ -170,16 +170,30 @@ print(pd.DataFrame([summary]))
 
 
 
-# Save the summary of results to a CSV file for documentation
-#pd.DataFrame([summary]).to_csv("output_summary.csv", index=False)
-#print("Summary saved to output_summary.csv")
 
 
 # Save test predictions to CSV for review
 pd.DataFrame({"Test Predictions": test_predictions}).to_csv("test_predictions.csv", index=False)
-print("Test predictions saved to test_predictions.csv")
+#print("Test predictions saved to test_predictions.csv")
+print("Sample Test Predictions:")
+print(pd.DataFrame({"Test Predictions": test_predictions}).head(10))  # Print first 10 predictions
+
+
 
 print(f"Linear Regression RMSE: {lr_rmse}")
 print(f"Random Forest RMSE: {rf_rmse}")
 print(f"Gradient Boosting RMSE: {gb_rmse}")
 print(f"Selected Model: {summary['Selected Model']}")
+
+print(f"Min Prediction: {test_predictions.min()}")
+print(f"Max Prediction: {test_predictions.max()}")
+print(f"Mean Prediction: {test_predictions.mean()}")
+# Save the summary of results to a CSV file for documentation
+#pd.DataFrame([summary]).to_csv("output_summary.csv", index=False)
+#print("Summary saved to output_summary.csv")
+
+plt.hist(test_predictions, bins=50, edgecolor='k')
+plt.xlabel("Predicted Prices")
+plt.ylabel("Frequency")
+plt.title("Distribution of Predicted Prices")
+plt.show()
