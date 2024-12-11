@@ -1,141 +1,132 @@
 # Import necessary libraries
-import pandas as pd # For data manipulation and analysis
+import pandas as pd  # For data manipulation and analysis
 import numpy as np  # For numerical computations
-from sklearn.model_selection import train_test_split # To split data into training and validation sets
-from sklearn.linear_model import LinearRegression # Linear regression model
-from sklearn.ensemble import RandomForestRegressor # Random forest regressor for non-linear relationships
-from sklearn.metrics import mean_squared_error # To evaluate model performance (RMSE)
-from sklearn.preprocessing import StandardScaler, OneHotEncoder # For scaling numeric data and encoding categorical data
-from sklearn.compose import ColumnTransformer # To preprocess different feature types in a single pipeline
-from sklearn.pipeline import Pipeline # To streamline preprocessing and modeling
-from sklearn.ensemble import GradientBoostingRegressor
-import matplotlib.pyplot as plt
-
-
+from sklearn.model_selection import train_test_split  # To split data into training and validation sets
+from sklearn.linear_model import LinearRegression  # Linear regression model
+from sklearn.ensemble import RandomForestRegressor  # Random forest regressor for non-linear relationships
+from sklearn.ensemble import GradientBoostingRegressor  # Gradient boosting regressor
+from sklearn.metrics import mean_squared_error  # To evaluate model performance (RMSE)
+from sklearn.preprocessing import StandardScaler, OneHotEncoder  # For scaling numeric data and encoding categorical data
+from sklearn.compose import ColumnTransformer  # To preprocess different feature types in a single pipeline
+from sklearn.pipeline import Pipeline  # To streamline preprocessing and modeling
+import matplotlib.pyplot as plt  # For visualization
+import seaborn as sns  # For enhanced visualizations
 
 # Load the training and test datasets
-# train.csv contains both features and target variable ('price')
-# test.csv contains only features, and we need to predict 'price' for this dataset
 train_path = "train.csv"
 test_path = "test.csv"
 
 try:
-    train_data = pd.read_csv(train_path) # Training data
-    test_data = pd.read_csv(test_path) # Test data
+    train_data = pd.read_csv(train_path)  # Training data
+    test_data = pd.read_csv(test_path)  # Test data
 except FileNotFoundError as e:
     print(f"Error: {e}")
     exit()
 
+# Visualization: Missing Values
+missing = train_data.isnull().sum()
+if missing[missing > 0].empty:
+    print("No missing values in the dataset.")
+else:
+    plt.figure(figsize=(10, 6))
+    missing[missing > 0].plot(kind='bar', color='skyblue')
+    plt.title("Missing Values Count per Column")
+    plt.ylabel("Count")
+    plt.xlabel("Columns")
+    plt.show()
 
-# Step 1: Data Exploration
-# Explore the training dataset
-train_summary = train_data.describe(include='all').transpose()  # Summary statistics for all columns
-missing_values = train_data.isnull().sum() # Count of missing values in each column
+# Visualization: Distribution of Numeric Features
+numeric_features = train_data.select_dtypes(include=['int64', 'float64']).columns
+train_data[numeric_features].hist(figsize=(12, 10), bins=30, edgecolor='k')
+plt.suptitle("Distribution of Numeric Features")
+plt.show()
 
+# Visualization: Categorical Features
+categorical_features = train_data.select_dtypes(include=['object']).columns
+for col in categorical_features:
+    if train_data[col].nunique() > 20:
+        print(f"Skipping bar chart for {col} due to high cardinality.")
+        continue
+    plt.figure(figsize=(8, 4))
+    train_data[col].value_counts().plot(kind='bar', color='lightcoral')
+    plt.title(f"Frequency of Categories in {col}")
+    plt.xlabel(col)
+    plt.ylabel("Count")
+    plt.show()
 
-# Step 2: Data Preprocessing
-# Identify numeric and categorical columns
-numeric_features = train_data.select_dtypes(include=['int64', 'float64']).columns.tolist() # List of numeric features
-categorical_features = train_data.select_dtypes(include=['object']).columns.tolist()  # List of categorical features
+# Visualization: Boxplots for Numeric Features
+for col in numeric_features:
+    plt.figure(figsize=(8, 4))
+    train_data.boxplot(column=col)
+    plt.title(f"Boxplot for {col}")
+    plt.show()
 
+# Visualization: Correlation Matrix
+correlation_matrix = train_data.corr()
+plt.figure(figsize=(12, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+plt.title("Correlation Matrix")
+plt.show()
 
-# Remove the target variable ('price') from numeric features, as it shouldn't be preprocessed
-numeric_features.remove("price")
+# Data Preprocessing
+numeric_features = train_data.select_dtypes(include=['int64', 'float64']).columns.tolist()
+categorical_features = train_data.select_dtypes(include=['object']).columns.tolist()
+numeric_features.remove("price")  # Remove target variable from numeric features
 
-
-# Define transformations:
-# Scale numeric features to standardize their range (mean=0, std=1)
 numeric_transformer = StandardScaler()
-
-# Encode categorical features into binary/one-hot representation
 categorical_transformer = OneHotEncoder(handle_unknown='ignore')
 
-
-# Combine numeric and categorical transformations into a single preprocessors
 preprocessor = ColumnTransformer(
     transformers=[
-        ('num', numeric_transformer, numeric_features), # Apply scaling to numeric features
-        ('cat', categorical_transformer, categorical_features) # Apply encoding to categorical features
-    ])
+        ('num', numeric_transformer, numeric_features),
+        ('cat', categorical_transformer, categorical_features)
+    ]
+)
 
+# Split data into features and target variable
+X = train_data.drop(columns=["price"])
+y = train_data["price"]
 
-# Step 3: Split data
-# Separate features (X) and target variable (y) from the training dataset
-X = train_data.drop(columns=["price"]) # Features
-y = train_data["price"] # Target variable (housing prices)
-
-# Split the data into training and validation sets
-# 80% of the data is used for training, and 20% is reserved for validation
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-
-
-# Step 4: Model Training (Linear Regression as a baseline) and Evaluation
-# Train a Linear Regression model as a baseline
-lr_pipeline = Pipeline(steps=[('preprocessor', preprocessor), # Apply preprocessing
-                              ('regressor', LinearRegression())])  # Use Linear Regression as the model
-
-
-# Fit the pipeline to the training data
+# Train and Evaluate Linear Regression
+lr_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('regressor', LinearRegression())
+])
 lr_pipeline.fit(X_train, y_train)
-
-# Predict on the validation set
 y_val_pred = lr_pipeline.predict(X_val)
-
-# Calculate RMSE (Root Mean Squared Error) to evaluate the model's performance
 lr_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred))
 
-
-# Visualize the Linear Regression results 
 plt.scatter(y_val, y_val_pred, alpha=0.5)
 plt.xlabel("Actual Prices")
 plt.ylabel("Predicted Prices")
 plt.title("Validation Set: Actual vs Predicted Prices (Linear Regression)")
 plt.show()
 
-
-# Step 5: Model Training (Random Forest Regressor for improvement)
-
-rf_pipeline = Pipeline(steps=[('preprocessor', preprocessor), # Apply preprocessing
-                              ('regressor', RandomForestRegressor(random_state=42))]) # Use Random Forest Regressor as the model
-
-
-# Fit the pipeline to the training data
+# Train and Evaluate Random Forest
+rf_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('regressor', RandomForestRegressor(random_state=42))
+])
 rf_pipeline.fit(X_train, y_train)
-
-# Predict on the validation set
 y_val_pred_rf = rf_pipeline.predict(X_val)
-
-# Calculate RMSE (Root Mean Squared Error) to evaluate the model's performance
 rf_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred_rf))
 
-
-
-
-# Step 6: Model Training (Gradient Boosting Regressor)
-# Gradient Boosting Regressor
-# Train a Gradient Boosting Regressor to capture non-linear relationships
+# Train and Evaluate Gradient Boosting
 gb_pipeline = Pipeline(steps=[
-    ('preprocessor', preprocessor),  # Apply preprocessing
-    ('regressor', GradientBoostingRegressor(random_state=42))  # Gradient Boosting model
+    ('preprocessor', preprocessor),
+    ('regressor', GradientBoostingRegressor(random_state=42))
 ])
-
-# Train the model
 gb_pipeline.fit(X_train, y_train)
-
-# Evaluate the model
 y_val_pred_gb = gb_pipeline.predict(X_val)
 gb_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred_gb))
 
+print(f"Linear Regression RMSE: {lr_rmse}")
+print(f"Random Forest RMSE: {rf_rmse}")
 print(f"Gradient Boosting RMSE: {gb_rmse}")
 
-
-
-
-
-# Step 7: Apply best model to test data
-# Select the best-performing model based on RMSE
-# Use Random Forest if it performs better; otherwise, use Linear Regression
+# Apply Best Model to Test Data
 if rf_rmse < lr_rmse and rf_rmse < gb_rmse:
     final_model = rf_pipeline
 elif gb_rmse < lr_rmse:
@@ -143,7 +134,6 @@ elif gb_rmse < lr_rmse:
 else:
     final_model = lr_pipeline
 
-# Debugging Test Predictions
 try:
     test_predictions = final_model.predict(test_data)
     print("Test predictions generated successfully.")
@@ -151,47 +141,26 @@ except Exception as e:
     print(f"Error during test predictions: {e}")
     exit()
 
+# Save Test Predictions
+pd.DataFrame({"Test Predictions": test_predictions}).to_csv("test_predictions.csv", index=False)
+print("Sample Test Predictions:")
+print(pd.DataFrame({"Test Predictions": test_predictions}).head(10))
 
-
-# Summarize results
+# Summarize Results
 summary = {
-    "Data Overview": train_summary,
-    "Missing Values": missing_values,
     "Linear Regression RMSE": lr_rmse,
     "Random Forest RMSE": rf_rmse,
     "Gradient Boosting RMSE": gb_rmse,
     "Selected Model": "Gradient Boosting" if gb_rmse < lr_rmse and gb_rmse < rf_rmse else
                      "Random Forest" if rf_rmse < lr_rmse else
-                     "Linear Regression"
+                     "Linear Regression",
+    "Min Prediction": test_predictions.min(),
+    "Max Prediction": test_predictions.max(),
+    "Mean Prediction": test_predictions.mean()
 }
-
-#import ace_tools as tools; tools.display_dataframe_to_user(name="Data Summary and Model Results", dataframe=pd.DataFrame([summary]))
 print(pd.DataFrame([summary]))
 
-
-
-
-
-# Save test predictions to CSV for review
-pd.DataFrame({"Test Predictions": test_predictions}).to_csv("test_predictions.csv", index=False)
-#print("Test predictions saved to test_predictions.csv")
-print("Sample Test Predictions:")
-print(pd.DataFrame({"Test Predictions": test_predictions}).head(10))  # Print first 10 predictions
-
-
-
-print(f"Linear Regression RMSE: {lr_rmse}")
-print(f"Random Forest RMSE: {rf_rmse}")
-print(f"Gradient Boosting RMSE: {gb_rmse}")
-print(f"Selected Model: {summary['Selected Model']}")
-
-print(f"Min Prediction: {test_predictions.min()}")
-print(f"Max Prediction: {test_predictions.max()}")
-print(f"Mean Prediction: {test_predictions.mean()}")
-# Save the summary of results to a CSV file for documentation
-#pd.DataFrame([summary]).to_csv("output_summary.csv", index=False)
-#print("Summary saved to output_summary.csv")
-
+# Visualization: Distribution of Predicted Prices
 plt.hist(test_predictions, bins=50, edgecolor='k')
 plt.xlabel("Predicted Prices")
 plt.ylabel("Frequency")
